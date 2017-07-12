@@ -1,0 +1,52 @@
+/* for the CRN model */
+crn_nodetype=0
+/* for Grid123 */
+scale=1.0
+xdim=1
+ydim=1
+zdim=1
+dx=0.01
+dy=0.01
+dz=0.01
+sigma_int_x=1.0
+sigma_int_y=1.0
+sigma_int_z=1.0
+sigma_ext_x=1.0
+sigma_ext_y=1.0
+sigma_ext_z=1.0
+/* for the Explicit Monodomain */
+dt=0.0001
+tfinal=9999.0
+/* for StimSimple */
+numstim=1
+onset[0]=5000.0
+finish[0]=10000.0
+duration[0]=2
+period[0]=1000.0
+strength[0]=15.0
+type[0]=intra
+nodelist[0]=0
+/* for binary output */
+outputfile=CRN_modified.out
+dumpspacing=1.0
+dumpvm=yes
+dumpvi=no
+dumpve=no
+dumpvb=no
+dumpq=no
+dumpaux=yes
+dumptime=no
+/* SimSystem parameters */
+beta=2000.0
+cm=1.0
+debug=1
+loadstate=no
+savestate=no
+loadfile=restart.load
+savefile=restart.save
+statefile=restart
+checkpoint=no
+ckptfile=check
+ckptinterval=1.0
+useauxvars=yes
+defaultnodetype=0

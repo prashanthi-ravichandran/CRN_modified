@@ -1,0 +1,11 @@
+data_size: 8
+endianness: little
+domain_size: 1
+state_size: 20
+aux_size: 17
+num_tsteps: 10000
+vm_file_size: 80000
+max_mem_size: 20
+state_file_size: 1600000
+max_aux_size: 17
+aux_file_size: 1360000
