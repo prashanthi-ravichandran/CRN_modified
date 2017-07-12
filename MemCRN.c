@@ -66,7 +66,7 @@ typedef struct {
 typedef struct{
 	real Inai,Ik1i,Itoi,Ikuri,Ikri,Iksi;
 	real Icali,Inaki,Inacai,Ibcai,Ibnai;
-	real Ipcai,Jreli,Jtri,Jupi,Jupleaki;
+	real Ipcai,Jreli,Jtri,Jupi,Jxferi,Jupleaki;
 	real Iioni;
 	real Caii,CaNSRi,CaSSi,CaJSRi;
 } CRN_auxvar;
@@ -346,6 +346,7 @@ int InitMembrane_CRN( char** res ) {
 	RegisterOffset( OffsetOf(CRN_auxvar,Jreli), CRN_NodeType, AuxVar, "CRN_Jreli" );
 	RegisterOffset( OffsetOf(CRN_auxvar,Jtri), CRN_NodeType, AuxVar, "CRN_Jtri" );
 	RegisterOffset( OffsetOf(CRN_auxvar,Jupi), CRN_NodeType, AuxVar, "CRN_Jupi" );
+	RegisterOffset( OffsetOf(CRN_auxvar,Jxferi), CRN_NodeType, AuxVar, "CRN_Jxferi" );
 	RegisterOffset( OffsetOf(CRN_auxvar,Jupleaki), CRN_NodeType, AuxVar, "CRN_Jupleaki" );
 	RegisterOffset( OffsetOf(CRN_auxvar,Iioni), CRN_NodeType, AuxVar, "CRN_Iioni" );
 	RegisterOffset( OffsetOf(CRN_auxvar,Caii), CRN_NodeType, AuxVar, "CRN_Caii" );
@@ -438,6 +439,7 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
 	real C1_to_C0,C2_to_C1,C3_to_C2,C4_to_C3,CCa1_to_CCa0,CCa2_to_CCa1,CCa3_to_CCa2,CCa4_to_CCa3,C0_to_CCa0;
 	real C1_to_CCa1,C2_to_CCa2,C3_to_CCa3,C4_to_CCa4,CCa0_to_C0,CCa1_to_C1,CCa2_to_C2,CCa3_to_C3,CCa4_to_C4;
 	real dC0,dC1,dC2,dC3,dC4,dOpen,dCCa0,dCCa1,dCCa2,dCCa3,dCCa4,yCa_inf,tau_yCa,dyCa;
+	real Jup_imw,Jrel_imw,Jtr_imw,Jxfer_imw;
 
   DebugEnter( "GetF_CRN" );
 
@@ -549,10 +551,10 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 //Calcium Flux
 	fb			= pow((Cai/Kfb),Nfb);
 	rb			= pow((CaNSR/Krb),Nrb);
-	//Jup			= KSR*(vmaxf*fb - vmaxr*rb)/(1.0 + fb + rb);
-	//Jrel			= v1*(O1_RyR+O2_RyR)*(CaJSR-CaSS);
-	//Jtr			= (CaNSR - CaJSR)/tautr;
-	//Jxfer		= (CaSS-Cai)/tauxfer;
+	Jup_imw			= KSR*(vmaxf*fb - vmaxr*rb)/(1.0 + fb + rb);
+	Jrel_imw			= v1*(O1_RyR+O2_RyR)*(CaJSR-CaSS);
+	Jtr_imw			= (CaNSR - CaJSR)/tautr;
+	Jxfer_imw		= (CaSS-Cai)/tauxfer;
 
 //Buffers
 		a1			= kltrpn_minus * LTRPNCa;
@@ -756,6 +758,25 @@ fp->Cai = dCai;
 fp->CaNSR = dCaNSR;
 fp->CaJSR = dCaJSR;
 
+fp->C1_RyR		= dC1_RyR;
+fp->O1_RyR		= dO1_RyR;
+fp->C2_RyR		= dC2_RyR;
+fp->O2_RyR		= dO2_RyR;
+fp->C0			= dC0;
+fp->C1			= dC1;
+fp->C2			= dC2;
+fp->C3			= dC3;
+fp->C4			= dC4;
+fp->Open			= dOpen;
+fp->CCa0			= dCCa0;
+fp->CCa1			= dCCa1;
+fp->CCa2			= dCCa2;
+fp->CCa3			= dCCa3;
+fp->CCa4			= dCCa4;
+fp->yCa			= dyCa;
+fp->HTRPNCa		= dHTRPNCa;
+fp->LTRPNCa		= dLTRPNCa;
+
 fp->m = (infm-m)/taum;
 fp->h = (infh-h)/tauh;
 fp->j = (infj-j)/tauj;
@@ -785,9 +806,10 @@ fp->w = (infw-w)/tauw;
 	ap->Ibcai = Ibca;
 	ap->Ibnai = Ibna;
 	ap->Ipcai = Ipca;
-	ap->Jreli = Jrel;
-	ap->Jtri = Jtr;
-	ap->Jupi = Jup;
+	ap->Jreli = Jrel_imw;
+	ap->Jtri = Jtr_imw;
+	ap->Jupi = Jup_imw;
+	ap->Jxferi = Jxfer_imw;
 	ap->Jupleaki = Jupleak;
 	ap->Iioni = Iion ;
 	ap->Caii = Cai;
