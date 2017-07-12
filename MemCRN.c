@@ -651,6 +651,16 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		//		   tau_yCa		= 1.0/(0.00653/(0.50+exp(vm/(7.1))) + 0.00512*exp(vm/ (-39.8))  );
 		dyCa			= (yCa_inf-yCa)/tau_yCa;
 
+//IMW Ion Fluxes
+
+		a1			= Acap/(Vmyo*IMW_frdy);
+		a3			= Ibca-2.0*Inaca+Ipca;
+		//dCai			= beta_i*(Jxfer-Jup-Jtrpn - a3*0.50*a1);
+		a3			= Jrel*VJSR/VSS - Jxfer*Vmyo/VSS;
+		//dCaSS		= beta_SS*(a3 - ICa*a2);
+		//dCaJSR		= beta_JSR*(Jtr - Jrel);
+		//dCaNSR		= Jup*Vmyo/VNSR - Jtr*VJSR/VNSR;
+
 // COMPUTE Iion
 
 /* Iion: scale by membrane surface area in cm^2 */
