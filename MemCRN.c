@@ -74,6 +74,7 @@ typedef struct{
 	real Iioni;
 	real Caii,CaNSRi,CaSSi,CaJSRi;
 	real Cai_imwi,CaNSR_imwi,CaSS_imwi,CaJSR_imwi;
+	real Openi;
 } CRN_auxvar;
 
 /* globals */
@@ -83,6 +84,9 @@ int  CRN_MemParamSize  = 0;
 byte CRN_NodeType = ByteError;
 
 static char* RCSID = "$Id: MemCRN.c 14 2007-05-11 14:57:55Z jbp $";
+
+//VOLTAGE CLAMP FLAG 3 sec -80; else +10 mV
+static real vclamp = 1;
 
 /* constants */
 static real cellLength = 100.0;		/* um */
@@ -485,7 +489,21 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
       ap = (CRN_auxvar*)av;
 
       /* get local variables */
-      vm = vmptr[i];
+
+			//VOLTAGE CLAMP LOGIC
+
+			if(vclamp == 1) {
+						if ((int)t < 5000) {
+							 vm = -80.0;
+						 }
+						 else {
+							 vm = 10.0;
+						 }
+			}
+			else {
+						vm = vmptr[i];
+			}
+
 			C1_RyR			= qp->C1_RyR;
 			O1_RyR			= qp->O1_RyR;
 			C2_RyR			= qp->C2_RyR;
@@ -649,7 +667,7 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		CCa3_to_CCa2 = 3.0*beta_prime;
 		CCa4_to_CCa3 = 4.0*beta_prime;
 
-		gamma		= 0.6*0.092330*Cai;
+		gamma		= 0.6*0.092330*CaSS_imw;
 		C0_to_CCa0	= gamma;				// = gamma
 		C1_to_CCa1	= aL*C0_to_CCa0;		// = gamma*aL
 		C2_to_CCa2	= aL*C1_to_CCa1;		// = gamma*aL^2
@@ -696,7 +714,6 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		a1			= 0.82;
 		yCa_inf		= a1/(1.0+exp((vm + 28.50)/(7.80))) + (1.0-a1);
 		tau_yCa		= 1.0/(0.00336336209452/(0.50+exp(vm/(-5.53899874036055))) + 0.00779046570737*exp(vm/ (-49.51039631160386))  );
-		//tau_yCa		= 1.0/(0.00653/(0.50+exp(vm/(7.1))) + 0.00512*exp(vm/ (-39.8))  );
 		dyCa			= (yCa_inf-yCa)/tau_yCa;
 
 //IMW Ion Fluxes
@@ -712,11 +729,16 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 
 // COMPUTE Iion
 
+if(vclamp == 1) {
+	Iion = 0;
+}
+else {
 /* Iion: scale by membrane surface area in cm^2 */
 //Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + Ipca + Inak + Inaca + Ibna + Ibca; //CRN
 //Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + (1.0e-6)*(Ical_imw + IpCa + INaCa +ICab) + Inak + Ibna; //IMW
 Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + (1.0e-6)*(IpCa + INaCa +ICab) + Inak + Ibna; //CRN Ical
 Iion /= (M_PI*cellDiameter*cellLength*1.0e-8);
+}
 
 //Gating Variable Calculations
 if(vm==-47.13){
@@ -861,7 +883,7 @@ fp->w = (infw-w)/tauw;
 	ap->Ibcai = Ibca;
 	ap->Ibnai = Ibna;
 	ap->Ipcai = Ipca;
-	ap->Jreli = Jrel_imw;
+	ap->Jreli = Jrel;
 	ap->Jtri = Jtr;
 	ap->Jupi = Jup;
 	ap->Jxferi = Jxfer;
@@ -875,6 +897,7 @@ fp->w = (infw-w)/tauw;
 	ap->CaNSR_imwi = CaNSR_imw;
 	ap->CaSS_imwi = CaSS_imw;
 	ap->CaJSR_imwi = CaJSR_imw;
+	ap->Openi = Open;
  }
 
     } /* end-if */
