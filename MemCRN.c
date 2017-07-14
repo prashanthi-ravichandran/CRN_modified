@@ -86,7 +86,7 @@ byte CRN_NodeType = ByteError;
 static char* RCSID = "$Id: MemCRN.c 14 2007-05-11 14:57:55Z jbp $";
 
 //VOLTAGE CLAMP FLAG 3 sec -80; else +10 mV
-static real vclamp = 1;
+static real vclamp = 0;
 
 /* constants */
 static real cellLength = 100.0;		/* um */
@@ -493,7 +493,10 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
 			//VOLTAGE CLAMP LOGIC
 
 			if(vclamp == 1) {
-						if ((int)t < 5000) {
+						if ((int)t > 110) {
+							 vm = -80.0;
+						}
+						if ((int)t < 100) {
 							 vm = -80.0;
 						 }
 						 else {
@@ -667,7 +670,7 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		CCa3_to_CCa2 = 3.0*beta_prime;
 		CCa4_to_CCa3 = 4.0*beta_prime;
 
-		gamma		= 0.6*0.092330*CaSS_imw;
+		gamma		= 0.6*0.092330*(Cai_imw);
 		C0_to_CCa0	= gamma;				// = gamma
 		C1_to_CCa1	= aL*C0_to_CCa0;		// = gamma*aL
 		C2_to_CCa2	= aL*C1_to_CCa1;		// = gamma*aL^2
@@ -722,8 +725,8 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		a3			= ICab-2.0*INaCa+IpCa;
 		dCai_imw			= beta_i*(Jxfer_imw - Jup_imw - Jtrpn - a3*0.50*a1);
 		a3			= (Jrel_imw*(VJSR/VSS)) - (Jxfer_imw*(Vmyo/VSS));
-		//dCaSS_imw		= beta_SS*(a3 - Ical_imw*a2);
-		dCaSS_imw		= beta_SS*(a3 - 1.0e4*Ical*a2); //CRN Ical formulation
+		dCaSS_imw		= beta_SS*(a3 - Ical_imw*a2);
+		//dCaSS_imw		= beta_SS*(a3 - 1.0e4*Ical*a2); //CRN Ical formulation
 		dCaJSR_imw		= beta_JSR*(Jtr_imw - Jrel_imw);
 		dCaNSR_imw		= Jup_imw*Vmyo/VNSR - Jtr_imw*VJSR/VNSR;
 
@@ -735,8 +738,8 @@ if(vclamp == 1) {
 else {
 /* Iion: scale by membrane surface area in cm^2 */
 //Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + Ipca + Inak + Inaca + Ibna + Ibca; //CRN
-//Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + (1.0e-6)*(Ical_imw + IpCa + INaCa +ICab) + Inak + Ibna; //IMW
-Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + (1.0e-6)*(IpCa + INaCa +ICab) + Inak + Ibna; //CRN Ical
+Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + (1.0e-6)*(Ical_imw + IpCa + INaCa +ICab) + Inak + Ibna; //IMW
+//Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + (1.0e-6)*(IpCa + INaCa +ICab) + Inak + Ibna; //CRN Ical
 Iion /= (M_PI*cellDiameter*cellLength*1.0e-8);
 }
 
@@ -877,13 +880,13 @@ fp->w = (infw-w)/tauw;
 	ap->Ikuri = Ikur;
 	ap->Ikri = Ikr;
 	ap->Iksi = Iks;
-	ap->Icali = Ical;
+	ap->Icali = Ical_imw;
 	ap->Inaki = Inak;
 	ap->Inacai = Inaca;
 	ap->Ibcai = Ibca;
 	ap->Ibnai = Ibna;
 	ap->Ipcai = Ipca;
-	ap->Jreli = Jrel;
+	ap->Jreli = Jrel_imw;
 	ap->Jtri = Jtr;
 	ap->Jupi = Jup;
 	ap->Jxferi = Jxfer;

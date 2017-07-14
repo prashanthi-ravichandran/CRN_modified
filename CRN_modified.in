@@ -15,12 +15,12 @@ sigma_ext_x=1.0
 sigma_ext_y=1.0
 sigma_ext_z=1.0
 /* for the Explicit Monodomain */
-dt=0.0001
-tfinal=9999.0
+dt=0.00001
+tfinal=29999.0
 /* for StimSimple */
 numstim=1
-onset[0]=20000.0
-finish[0]=58000.0
+onset[0]=2000.0
+finish[0]=28000.0
 duration[0]=2
 period[0]=1000.0
 strength[0]=15.0
