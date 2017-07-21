@@ -14,9 +14,12 @@ sigma_int_z=1.0
 sigma_ext_x=1.0
 sigma_ext_y=1.0
 sigma_ext_z=1.0
-/* for the Explicit Monodomain */
+/* for the Explicit Monodomain
 dt=0.00001
-tfinal=29999.0
+tfinal=29999.0 */
+/* for voltage clamp */
+dt=0.00001
+tfinal=199.0
 /* for StimSimple */
 numstim=1
 onset[0]=2000.0

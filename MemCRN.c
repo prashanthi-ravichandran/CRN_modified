@@ -75,6 +75,7 @@ typedef struct{
 	real Caii,CaNSRi,CaSSi,CaJSRi;
 	real Cai_imwi,CaNSR_imwi,CaSS_imwi,CaJSR_imwi;
 	real Openi;
+	real dC_toti,dCC_toti,dTOTi;
 } CRN_auxvar;
 
 /* globals */
@@ -86,7 +87,7 @@ byte CRN_NodeType = ByteError;
 static char* RCSID = "$Id: MemCRN.c 14 2007-05-11 14:57:55Z jbp $";
 
 //VOLTAGE CLAMP FLAG 3 sec -80; else +10 mV
-static real vclamp = 0;
+static real vclamp = 1;
 
 /* constants */
 static real cellLength = 100.0;		/* um */
@@ -478,6 +479,7 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
 	real Cai_imw,CaNSR_imw,CaSS_imw,CaJSR_imw;
 	real dCai_imw,dCaNSR_imw,dCaSS_imw,dCaJSR_imw;
 	real INaCa,IpCa,ICab;
+	real dC_tot,dCC_tot,dTOT;
 
   DebugEnter( "GetF_CRN" );
 
@@ -670,7 +672,7 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		CCa3_to_CCa2 = 3.0*beta_prime;
 		CCa4_to_CCa3 = 4.0*beta_prime;
 
-		gamma		= 0.6*0.092330*(Cai_imw);
+		gamma		= 0.6*0.092330*CaSS_imw;//(0.025*CaSS_imw);
 		C0_to_CCa0	= gamma;				// = gamma
 		C1_to_CCa1	= aL*C0_to_CCa0;		// = gamma*aL
 		C2_to_CCa2	= aL*C1_to_CCa1;		// = gamma*aL^2
@@ -713,6 +715,10 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		a1			= (CCa4_to_CCa3+CCa4_to_C4)*CCa4;
 		a2			= CCa3_to_CCa4*CCa3 + C4_to_CCa4*C4;
 		dCCa4		= a2 - a1;
+
+		dC_tot = dC0 + dC1 + dC2 + dC3 + dC4;
+		dCC_tot = dCCa0 + dCCa1 + dCCa2 + dCCa3 + dCCa4;
+		dTOT = dC_tot + dCC_tot;
 
 		a1			= 0.82;
 		yCa_inf		= a1/(1.0+exp((vm + 28.50)/(7.80))) + (1.0-a1);
@@ -901,6 +907,9 @@ fp->w = (infw-w)/tauw;
 	ap->CaSS_imwi = CaSS_imw;
 	ap->CaJSR_imwi = CaJSR_imw;
 	ap->Openi = Open;
+	ap->dC_toti = dC_tot;
+	ap->dCC_toti = dCC_tot;
+	ap->dTOTi = dTOT;
  }
 
     } /* end-if */
