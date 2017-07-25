@@ -65,6 +65,7 @@ typedef struct {
 	real CaNSR_imw;
 	real CaSS_imw;
 	real CaJSR_imw;
+	real NaSS;
 } CRN_patch;
 
 typedef struct{
@@ -87,7 +88,7 @@ byte CRN_NodeType = ByteError;
 static char* RCSID = "$Id: MemCRN.c 14 2007-05-11 14:57:55Z jbp $";
 
 //VOLTAGE CLAMP FLAG 3 sec -80; else +10 mV
-static real vclamp = 1;
+static real vclamp = 0;
 
 /* constants */
 static real cellLength = 100.0;		/* um */
@@ -134,6 +135,10 @@ static real taufca = 2.0;		/* msec */
 static real tautr = 180.0;		/* msec */
 static real tauu = 8.0;			/* msec */
 
+//SODIUM SS Parameters
+static real knaxfr = 0.001;
+static real VnaSS = 0.05*13668.0;
+
 //IMW PARAMETERS
 
 //General Parameters
@@ -158,7 +163,7 @@ static real eta				= 0.35;
 static real INaKmax			= 2.387;
 static real KmNai			= 20.0;
 static real KmKo			= 1.5;
-static real IpCamax			= 0.05;
+static real IpCamax			= 20*0.05;
 static real KmpCa			= 0.0005;
 static real GCab			= 7.684e-5;
 static real GNab			= 0.001;
@@ -237,11 +242,12 @@ static CRN_patch CRN_RestPatch = {
 		0.8601192016E-04, //Cai IMW
 		0.2855294915E+00, //CaNSR IMW
 		0.1420215245E-03, //CaSS IMW
-		0.2852239446E+00 //CaJSR IMW
+		0.2852239446E+00, //CaJSR IMW
 		/*1.02e-4, //Cai CRN
 		1.49, //CaNSR CRN
 		1.02e-4, //CaSS CRN
 		1.49 //CaJSR CRN*/
+		11.2//NaSS
 	};
 
 
@@ -480,6 +486,7 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
 	real dCai_imw,dCaNSR_imw,dCaSS_imw,dCaJSR_imw;
 	real INaCa,IpCa,ICab;
 	real dC_tot,dCC_tot,dTOT;
+	real NaSS,dNaSS,Jnaxfr;
 
   DebugEnter( "GetF_CRN" );
 
@@ -552,6 +559,7 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
 			CaNSR_imw		= qp->CaNSR_imw;
 			CaSS_imw			= qp->CaSS_imw;
 			CaJSR_imw			= qp->CaJSR_imw;
+			NaSS = qp->NaSS;
 
 //Driving Force et al. Calculations
 Ena = (R*T/F)*log(Nao/Nai);
@@ -570,13 +578,19 @@ Ikur = gkur*ua*ua*ua*ui*(vm-Ek);
 Ikr = gkr*xr*(vm-Ek)/(1.0 + exp((vm+15.0)/22.4));
 Iks = gks*xs*xs*(vm-Ek);
 Ical = gcal*d*f*fca*(vm-65.0);
-Inak = Inakmax*fnak*(1.0/(1.0 + pow(Kmnai/Nai,1.5))) * Ko/(Ko+Kmko);
-Inaca = Inacamax*(exp(lambda*F*vm/(R*T))*Nai*Nai*Nai*Cao-
+Inak = Inakmax*fnak*(1.0/(1.0 + pow(Kmnai/NaSS,1.5))) * Ko/(Ko+Kmko);
+Inaca = 0.00001*(Inacamax*((exp(lambda*F*vm/(R*T))*NaSS*NaSS*NaSS*Cao)-
+			(exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai)))/
+	(1.0 + (ksat*((exp(lambda*F*vm/(R*T))*NaSS*NaSS*NaSS*Cao)+
+			(exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai))));
+/*Inaca = Inacamax*(exp(lambda*F*vm/(R*T))*Nai*Nai*Nai*Cao-
 			exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai)/
-	((Kmna*Kmna*Kmna + Nao*Nao*Nao)*(Kmca + Cao)*(1.0 + ksat*exp((lambda-1)*F*vm/(R*T))));
+	((Kmna*Kmna*Kmna + Nao*Nao*Nao)*(Kmca + Cao)*(1.0 + ksat*exp((lambda-1)*F*vm/(R*T))));*/
 Ibca = gbca*(vm-Eca);
 Ibna = gbna*(vm-Ena);
 Ipca = Ipcamax*Cai/(0.0005 + Cai);
+
+Jnaxfr = knaxfr*(NaSS - Nai);
 
 Jrel = krel*u*u*v*w*(CaJSR-Cai);
 Jtr = (CaNSR-CaJSR)/tautr;
@@ -590,7 +604,8 @@ B1 = 1.0e6*((2.0*Inaca-Ipca-Ical-Ibca)/(2.0*F*Vi))+
 B2 = 1.0+Trpnmax*KmTrpn/((Cai+KmTrpn)*(Cai+KmTrpn))+Cmdnmax*KmCmdn/
 	((Cai+KmCmdn)*(Cai+KmCmdn));
 
-dNai = 1.0e6*((-3.0*Inak-3.0*Inaca-Ibna-Ina)/(F*Vi));
+dNai = Jnaxfr*(VnaSS/Vi);
+dNaSS = 1.0e6*((-3.0*Inak-3.0*Inaca-Ibna-Ina)/(F*Vi)) - Jnaxfr*(Vi/VnaSS);
 dKi = 1.0e6*((2.0*Inak-Ik1-Ito-Ikur-Ikr-Iks)/(F*Vi));
 dCai = B1/B2;
 dCaNSR = Jup-Jupleak-Jtr*Vrel/Vup;
@@ -609,7 +624,7 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		Ical_imw = ICamax*yCa*Open;
 
 //ICaP
-		a1		= exp(eta*VF_over_RT)*pow(Nai,3)*Cao;
+		a1		= exp(eta*VF_over_RT)*pow(NaSS,3)*Cao;
 		a2		= exp((eta-1.0)*VF_over_RT)*pow(Nao,3)*Cai_imw;
 		a3		= 1.0+ksat_imw*exp((eta-1.0)*VF_over_RT);
 		a4		= KmCa+Cao;
@@ -632,9 +647,11 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		a1			= khtrpn_minus * HTRPNCa;
 		dHTRPNCa		= khtrpn_plus*Cai_imw*(1.0 - HTRPNCa) - a1;
 		Jtrpn		= LTRPNtot*dLTRPNCa+HTRPNtot*dHTRPNCa;
+
 		a1			= CMDNtot*KmCMDN/(pow((CaSS_imw+KmCMDN),2.0));
 		a2			= EGTAtot*KmEGTA/(pow((CaSS_imw+KmEGTA),2.0));
 		beta_SS		= 1.0/(1.0+a1+a2);
+
 		a1			= CSQNtot*KmCSQN/(pow((CaJSR_imw+KmCSQN),2.0));
 		beta_JSR		= 1.0/(1.0+a1);
 
@@ -731,7 +748,7 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 		a3			= ICab-2.0*INaCa+IpCa;
 		dCai_imw			= beta_i*(Jxfer_imw - Jup_imw - Jtrpn - a3*0.50*a1);
 		a3			= (Jrel_imw*(VJSR/VSS)) - (Jxfer_imw*(Vmyo/VSS));
-		dCaSS_imw		= beta_SS*(a3 - Ical_imw*a2);
+		dCaSS_imw		= beta_SS*(a3 - 1.0e4*Ical*a2);
 		//dCaSS_imw		= beta_SS*(a3 - 1.0e4*Ical*a2); //CRN Ical formulation
 		dCaJSR_imw		= beta_JSR*(Jtr_imw - Jrel_imw);
 		dCaNSR_imw		= Jup_imw*Vmyo/VNSR - Jtr_imw*VJSR/VNSR;
@@ -744,8 +761,8 @@ if(vclamp == 1) {
 else {
 /* Iion: scale by membrane surface area in cm^2 */
 //Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + Ipca + Inak + Inaca + Ibna + Ibca; //CRN
-Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + (1.0e-6)*(Ical_imw + IpCa + INaCa +ICab) + Inak + Ibna; //IMW
-//Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + (1.0e-6)*(IpCa + INaCa +ICab) + Inak + Ibna; //CRN Ical
+//Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + (1.0e-6)*(Ical_imw + IpCa + INaCa +ICab) + Inak + Ibna; //IMW
+Iion = Ina + Ik1 + Ito + Ikur + Ikr + Iks + Ical + (1.0e-6)*(IpCa + ICab)+ Inaca + Inak + Ibna; //CRN Ical
 Iion /= (M_PI*cellDiameter*cellLength*1.0e-8);
 }
 
@@ -816,7 +833,7 @@ infd = 1.0/(1.0+exp(-1.0*(vm+10.0)/8.0));
 tauf = 9.0/(0.0197*exp(-1.0*0.0337*0.0337*(vm+10.0)*(vm+10.0)) + 0.02);
 inff = 1.0/(1.0+exp((vm+28.0)/6.9));
 
-inffca = 1.0/(1.0+Cai/0.00035);
+inffca = 1.0/(1.0+CaSS_imw/0.35);
 
 Fn = 1.0e-12*Vrel*Jrel-(5.0e-7/F)*(0.5*Ical-0.2*Inaca);
 
@@ -879,6 +896,8 @@ fp->u = (infu-u)/tauu;
 fp->v = (infv-v)/tauv;
 fp->w = (infw-w)/tauw;
 
+fp->NaSS = dNaSS;
+
  if( UseAuxvars ) {
 	ap->Inai = Ina;
 	ap->Ik1i = Ik1;
@@ -886,7 +905,7 @@ fp->w = (infw-w)/tauw;
 	ap->Ikuri = Ikur;
 	ap->Ikri = Ikr;
 	ap->Iksi = Iks;
-	ap->Icali = Ical_imw;
+	ap->Icali = Ical;
 	ap->Inaki = Inak;
 	ap->Inacai = Inaca;
 	ap->Ibcai = Ibca;
