@@ -77,6 +77,7 @@ typedef struct{
 	real Cai_imwi,CaNSR_imwi,CaSS_imwi,CaJSR_imwi;
 	real Openi;
 	real dC_toti,dCC_toti,dTOTi;
+	real Naii,NaSSi;
 } CRN_auxvar;
 
 /* globals */
@@ -833,7 +834,7 @@ infd = 1.0/(1.0+exp(-1.0*(vm+10.0)/8.0));
 tauf = 9.0/(0.0197*exp(-1.0*0.0337*0.0337*(vm+10.0)*(vm+10.0)) + 0.02);
 inff = 1.0/(1.0+exp((vm+28.0)/6.9));
 
-inffca = 1.0/(1.0+CaSS_imw/0.35);
+inffca = 1.0/(1.0+CaSS_imw/0.025);
 
 Fn = 1.0e-12*Vrel*Jrel-(5.0e-7/F)*(0.5*Ical-0.2*Inaca);
 
@@ -929,6 +930,8 @@ fp->NaSS = dNaSS;
 	ap->dC_toti = dC_tot;
 	ap->dCC_toti = dCC_tot;
 	ap->dTOTi = dTOT;
+	ap->Naii = Nai;
+	ap->NaSSi = NaSS;
  }
 
     } /* end-if */

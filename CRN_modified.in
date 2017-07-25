@@ -27,12 +27,12 @@ numstim=1
 onset[0]=12000.0
 finish[0]=48000.0
 duration[0]=2
-period[0]=333.333
+period[0]=2000.0
 strength[0]=15.0
 type[0]=intra
 nodelist[0]=0
 /* for binary output */
-outputfile=CRN_modified_3_Hz.out
+outputfile=CRN_modified.out
 dumpspacing=1.0
 dumpvm=yes
 dumpvi=no
