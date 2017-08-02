@@ -2,8 +2,8 @@
 % S. Tsutsui, July 2017
 % Iyer Research Group, CUMC
 
-vm = loaddbl('CRN_modified.out.vm');
-aux = loaddbl('CRN_modified.out.aux');
+vm = loaddbl('CRN_modified_2_Hz.out.vm');
+aux = loaddbl('CRN_modified_2_Hz.out.aux');
 %vm_baseline = loaddbl('CRN_modified_baseline.out.vm');
 %aux_baseline = loaddbl('CRN_modified_baseline.out.aux');
 
@@ -33,7 +33,7 @@ Cai_imw = aux(23:32:end);
 CaNSR_imw = aux(24:32:end);
 CaSS_imw = aux(25:32:end);
 CaJSR_imw = aux(26:32:end);
-Open = aux(27:32:end);
+Ena = aux(27:32:end);
 dC_tot = aux(28:32:end);
 dCC_tot = aux(29:32:end);
 dTOT = aux(30:32:end);
@@ -83,15 +83,32 @@ title('J_{rel}');
 % title('Ca_{JSR}');
 
 figure;
-subplot(4,1,1);
+subplot(3,1,1);
+plot(Ina,'LineWidth',1.4);
+title('I_{Na}');
+subplot(3,1,3);
+plot(Ena,'LineWidth',1.4);
+title('E_{Na}');
+subplot(3,1,2);
+plot(Inak,'LineWidth',1.4);
+title('I_{NaK}');
+
+figure;
+subplot(6,1,1);
 plot(Cai_imw,'LineWidth',1.4);
 title('Ca_i IMW');
-subplot(4,1,2);
+subplot(6,1,2);
 plot(CaSS_imw,'LineWidth',1.4);
 title('Ca_{SS} IMW');
-subplot(4,1,3);
+subplot(6,1,3);
 plot(CaNSR_imw,'LineWidth',1.4);
 title('Ca_{NSR} IMW');
-subplot(4,1,4);
+subplot(6,1,4);
 plot(CaJSR_imw,'LineWidth',1.4);
 title('Ca_{JSR} IMW');
+subplot(6,1,5);
+plot(Nai,'LineWidth',1.4);
+title('Na_i');
+subplot(6,1,6);
+plot(NaSS,'LineWidth',1.4);
+title('Na_{SS}');

@@ -2,10 +2,10 @@ data_size: 8
 endianness: little
 domain_size: 1
 state_size: 44
-aux_size: 30
-num_tsteps: 60000
-vm_file_size: 480000
+aux_size: 32
+num_tsteps: 300000
+vm_file_size: 2400000
 max_mem_size: 44
-state_file_size: 21120000
-max_aux_size: 30
-aux_file_size: 14400000
+state_file_size: 105600000
+max_aux_size: 32
+aux_file_size: 76800000

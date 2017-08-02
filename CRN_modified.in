@@ -19,20 +19,20 @@ dt=0.00001
 tfinal=999.0 */
 
 /* for the Explicit Monodomain */
-dt=0.00001
-tfinal=59999.0
+dt=0.0001
+tfinal=29999.0
 
 /* for StimSimple */
 numstim=1
-onset[0]=12000.0
-finish[0]=48000.0
+onset[0]=10.0
+finish[0]=29999.0
 duration[0]=2
-period[0]=2000.0
+period[0]=1000.0
 strength[0]=15.0
 type[0]=intra
 nodelist[0]=0
 /* for binary output */
-outputfile=CRN_modified.out
+outputfile=CRN_modified_2_Hz.out
 dumpspacing=1.0
 dumpvm=yes
 dumpvi=no

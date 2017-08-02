@@ -7,6 +7,9 @@ First Draft on 4/29/99
 Program corrected and benchmarked against below reference
 by Robert Oliver on 9/14/00
 
+Adapted and modified by Shawn C. Tsutsui in 07/2017
+
+********************************************************************************
 
 From The Journal Article : "Ionic Mechanisms Underlying Human Atrial Action
 	Properties: Insights from a Mathematical Model"
@@ -56,7 +59,7 @@ typedef struct {
 	real HTRPNCa;
 	real LTRPNCa;
 	real m,h,j,sa,si,ua,ui,xr,xs,d,f,fca,u,v,w;
-	real Nai,Ki;
+	real Nai,NaSS,Ki;
 	real Cai;
 	real CaNSR;
 	real CaSS;
@@ -65,7 +68,6 @@ typedef struct {
 	real CaNSR_imw;
 	real CaSS_imw;
 	real CaJSR_imw;
-	real NaSS;
 } CRN_patch;
 
 typedef struct{
@@ -137,8 +139,8 @@ static real tautr = 180.0;		/* msec */
 static real tauu = 8.0;			/* msec */
 
 //SODIUM SS Parameters
-static real knaxfr = 0.001;
-static real VnaSS = 0.05*13668.0;
+static real knaxfr = 0.00001;
+static real VnaSS = 0.02*13668.0;
 
 //IMW PARAMETERS
 
@@ -235,7 +237,7 @@ static CRN_patch CRN_RestPatch = {
 		0.8046584973E-01,
 		2.91e-3,0.965,0.978,3.04e-2,0.999,
 	  4.96e-3,0.999,3.29e-5,1.87e-2,1.37e-4,
-	  0.999,0.775,0.0,1.0,0.999,11.2,139.0,
+	  0.999,0.775,0.0,1.0,0.999,11.2,11.2,139.0,
 	  1.02e-4, //Cai CRN
 		1.49, //CaNSR CRN
 		1.02e-4, //CaSS CRN
@@ -243,12 +245,11 @@ static CRN_patch CRN_RestPatch = {
 		0.8601192016E-04, //Cai IMW
 		0.2855294915E+00, //CaNSR IMW
 		0.1420215245E-03, //CaSS IMW
-		0.2852239446E+00, //CaJSR IMW
+		0.2852239446E+00 //CaJSR IMW
 		/*1.02e-4, //Cai CRN
 		1.49, //CaNSR CRN
 		1.02e-4, //CaSS CRN
 		1.49 //CaJSR CRN*/
-		11.2//NaSS
 	};
 
 
@@ -551,6 +552,7 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
       v  = qp->v;
       w  = qp->w;
       Nai = qp->Nai;
+			NaSS = qp->NaSS;
       Ki  = qp->Ki;
 			Cai				= qp->Cai;
 			CaNSR			= qp->CaNSR;
@@ -560,7 +562,6 @@ int GetF_CRN( real t, real dt, vector Vm, vector Qv,
 			CaNSR_imw		= qp->CaNSR_imw;
 			CaSS_imw			= qp->CaSS_imw;
 			CaJSR_imw			= qp->CaJSR_imw;
-			NaSS = qp->NaSS;
 
 //Driving Force et al. Calculations
 Ena = (R*T/F)*log(Nao/Nai);
@@ -580,10 +581,10 @@ Ikr = gkr*xr*(vm-Ek)/(1.0 + exp((vm+15.0)/22.4));
 Iks = gks*xs*xs*(vm-Ek);
 Ical = gcal*d*f*fca*(vm-65.0);
 Inak = Inakmax*fnak*(1.0/(1.0 + pow(Kmnai/NaSS,1.5))) * Ko/(Ko+Kmko);
-Inaca = 0.00001*(Inacamax*((exp(lambda*F*vm/(R*T))*NaSS*NaSS*NaSS*Cao)-
-			(exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai)))/
+Inaca = 0.00005*(Inacamax*((exp(lambda*F*vm/(R*T))*NaSS*NaSS*NaSS*Cao)-
+			(exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai_imw)))/
 	(1.0 + (ksat*((exp(lambda*F*vm/(R*T))*NaSS*NaSS*NaSS*Cao)+
-			(exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai))));
+			(exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai_imw))));
 /*Inaca = Inacamax*(exp(lambda*F*vm/(R*T))*Nai*Nai*Nai*Cao-
 			exp((lambda-1)*F*vm/(R*T))*Nao*Nao*Nao*Cai)/
 	((Kmna*Kmna*Kmna + Nao*Nao*Nao)*(Kmca + Cao)*(1.0 + ksat*exp((lambda-1)*F*vm/(R*T))));*/
@@ -606,7 +607,7 @@ B2 = 1.0+Trpnmax*KmTrpn/((Cai+KmTrpn)*(Cai+KmTrpn))+Cmdnmax*KmCmdn/
 	((Cai+KmCmdn)*(Cai+KmCmdn));
 
 dNai = Jnaxfr*(VnaSS/Vi);
-dNaSS = 1.0e6*((-3.0*Inak-3.0*Inaca-Ibna-Ina)/(F*Vi)) - Jnaxfr*(Vi/VnaSS);
+dNaSS = 1.0e6*((-3.0*Inak-3.0*Inaca-Ibna-Ina)/(F*VnaSS)) - Jnaxfr*(Vi/VnaSS);
 dKi = 1.0e6*((2.0*Inak-Ik1-Ito-Ikur-Ikr-Iks)/(F*Vi));
 dCai = B1/B2;
 dCaNSR = Jup-Jupleak-Jtr*Vrel/Vup;
@@ -746,7 +747,7 @@ dCaJSR = (Jtr-Jrel)*(1.0/(1.0+(Csqnmax*KmCsqn)/
 //IMW Ion Fluxes
 		a1			= Acap/(Vmyo*IMW_frdy);
 		a2			= Acap/(2.0*VSS*IMW_frdy);
-		a3			= ICab-2.0*INaCa+IpCa;
+		a3			= ICab-2.0*Inaca+IpCa;
 		dCai_imw			= beta_i*(Jxfer_imw - Jup_imw - Jtrpn - a3*0.50*a1);
 		a3			= (Jrel_imw*(VJSR/VSS)) - (Jxfer_imw*(Vmyo/VSS));
 		dCaSS_imw		= beta_SS*(a3 - 1.0e4*Ical*a2);
@@ -850,6 +851,7 @@ infw = 1.0-1.0/(1.0+exp(-1.0*(vm-40.0)/17.0));
 fv[i] += -1.0*Iion;
 
 fp->Nai = dNai;
+fp->NaSS = dNaSS;
 fp->Ki = dKi;
 
 fp->Cai = dCai;
@@ -857,10 +859,10 @@ fp->CaNSR = dCaNSR;
 fp->CaSS = dCaSS;
 fp->CaJSR = dCaJSR;
 
-fp->Cai_imw = dCai_imw;
-fp->CaNSR_imw = dCaNSR_imw;
-fp->CaSS_imw = dCaSS_imw;
-fp->CaJSR_imw = dCaJSR_imw;
+fp->Cai_imw = 0;//dCai_imw;
+fp->CaNSR_imw = 0;//dCaNSR_imw;
+fp->CaSS_imw = 0;//dCaSS_imw;
+fp->CaJSR_imw = 0;//dCaJSR_imw;
 
 fp->C1_RyR		= dC1_RyR;
 fp->O1_RyR		= dO1_RyR;
@@ -897,8 +899,6 @@ fp->u = (infu-u)/tauu;
 fp->v = (infv-v)/tauv;
 fp->w = (infw-w)/tauw;
 
-fp->NaSS = dNaSS;
-
  if( UseAuxvars ) {
 	ap->Inai = Ina;
 	ap->Ik1i = Ik1;
@@ -926,7 +926,7 @@ fp->NaSS = dNaSS;
 	ap->CaNSR_imwi = CaNSR_imw;
 	ap->CaSS_imwi = CaSS_imw;
 	ap->CaJSR_imwi = CaJSR_imw;
-	ap->Openi = Open;
+	ap->Openi = Ena;
 	ap->dC_toti = dC_tot;
 	ap->dCC_toti = dCC_tot;
 	ap->dTOTi = dTOT;
